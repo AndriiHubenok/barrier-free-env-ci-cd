@@ -1,0 +1,40 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--menu-bar-height)); /* 🔥 Віднімаємо реальну висоту menu-bar */
+}
+
+.btn-yes {
+  @apply px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 transition;
+}
+
+.btn-no {
+  @apply px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 transition;
+}
+
+.link {
+  @apply text-blue-600 underline hover:text-blue-800 transition;
+}
+
+.hand {
+  animation: handMove 2s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes handMove {
+  0%, 70% {
+    transform: translateY(-30px);
+  }
+
+  85% {
+    transform: translateY(30px);
+  }
+
+  100% {
+    transform: translateY(-30px);
+  }
+}
+
+.w-101{
+  width: 101%;
+}

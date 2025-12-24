@@ -1,0 +1,226 @@
+<div class="container mx-auto p-6 max-w-6xl">
+
+  @if (location) {
+    <!-- Дві колонки: інформація + карта -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <!-- ЛІВА КОЛОНКА — ІНФОРМАЦІЯ -->
+      <div>
+
+        <!-- Редагування локації-->
+        @if (mode === 'admin') {
+          <button (click)="openUpdateForm($event)"
+                  class="w-full text-center text-base font-semibold
+               text-white bg-deep-dark-blue opacity-90
+               px-4 py-2 rounded-xl shadow-md hover:opacity-80 hover:shadow-lg
+               active:scale-[0.98] transition duration-200">
+            Редагувати
+          </button>
+
+          @if (showUpdateForm) {
+            <!--TODO change on location-create-form-->
+            <app-location-edit-dialog
+              [locationId]="location.id"
+              [prefillData]="location"
+              (close)="showUpdateForm = false"
+              (saved)="onUpdateSubmitted($event)">
+            </app-location-edit-dialog>
+          }
+        }
+
+        <app-location-info [location]="location" [criteriaTree]="criteriaTree"></app-location-info>
+      </div>
+
+      <!-- ПРАВА КОЛОНКА — КАРТА -->
+      <div class="relative">
+
+        <!-- Кнопки керування статусом -->
+        @if (mode === 'admin') {
+          <section class="mb-6">
+            <h2 class="font-semibold text-center text-gray-800 text-lg mb-2">Керування статусом</h2>
+            <div class="flex justify-around">
+              @switch (location.status) {
+                @case ('pending') {
+                  <button (click)="changeStatus('published')"
+                          class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg">
+                    Опублікувати
+                  </button>
+
+                  <button (click)="openRejectForm()"
+                          class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg">
+                    Відхилити
+                  </button>
+                }
+                @case ('published') {
+                  <button (click)="changeStatus('pending')"
+                          class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-lg">
+                    Зняти з публікації
+                  </button>
+                }
+                @case ('rejected') {
+                  <button (click)="changeStatus('pending')"
+                          class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-lg">
+                    Відправити на перевірку
+                  </button>
+                }
+              }
+              <button (click)="deleteLocation()"
+                      class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 rounded-lg">
+                Видалити
+              </button>
+            </div>
+          </section>
+
+        }
+
+        @if (images?.length) {
+          <app-slideshow-component [images]="images" class="rounded"></app-slideshow-component>
+        }
+
+        <div id="map" class="w-full h-[500px] rounded-xl shadow-md border"></div>
+
+      </div>
+    </div>
+
+
+    <!-- 🆕 СЕКЦІЯ ОНОВЛЕННЯ -->
+    <section class="mt-10 border-t pt-6">
+      <h2 class="text-xl font-semibold text-gray-800 mb-3">Оновлення</h2>
+      @if (pendingLocations.length > 0) {
+        <ul class="space-y-3">
+          @for (pending of pendingLocations; track pending.id) {
+            <li class="border rounded-lg p-4 bg-gray-50 cursor-pointer hover:bg-gray-100 transition"
+                (click)="openPendingModal(pending)">
+
+              <div class="flex justify-between items-center">
+                <div>
+                  <p class="font-medium text-gray-800">{{ pending.name || 'Без назви' }}</p>
+                  <p class="text-sm text-gray-600">{{ pending.address }}</p>
+                  @if (pending.description) {
+                    <div class="text-sm text-gray-700 mt-2">
+                      {{
+                        pending.description?.length > 150
+                          ? (pending.description | slice:0:150) + '...'
+                          : pending.description
+                      }}
+                    </div>
+                  }
+                </div>
+
+                @switch (pending.status) {
+                  @case ('pending') {
+                    <span class="text-xs text-yellow-700 bg-yellow-100 px-2 py-1 rounded">Очікує перевірки</span>
+                  }
+                  @case ('rejected') {
+                    <span class="text-xs text-red-700 bg-red-100 px-2 py-1 rounded">Відхилено</span>
+                  }
+                }
+              </div>
+
+              <div class="text-xs text-gray-500 mt-1">
+                Оновлено: {{ pending.updatedAt | date:'medium' }}
+              </div>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="text-sm text-gray-500">Наразі немає оновлень.</p>
+      }
+    </section>
+
+  } @else {
+    <div class="flex flex-col items-center justify-center h-96 text-center">
+      <h1 class="font-semibold text-2xl mb-3">Локація не знайдена</h1>
+      <img ngSrc="assets/unhappy.png" alt="hand point" height="128" width="128">
+    </div>
+  }
+
+
+
+  <!-- 🆕 МОДАЛЬНЕ ВІКНО ДЕТАЛЕЙ ОНОВЛЕННЯ -->
+  @if (selectedPending && !showComparisonForm) {
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[80%] shadow-lg relative overflow-auto">
+        <button
+          class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl"
+          (click)="closePendingModal()"
+        >
+          ✖
+        </button>
+        @if (mode === 'admin' && selectedPending.status === 'rejected') {
+          <h2 class="text-2xl font-semibold mb-4 text-center text-red-700">Відхилене оновлення</h2>
+        }
+        <app-location-info [location]="selectedPending"></app-location-info>
+
+        @if (mode === 'user') {
+          <p class="text-xs text-gray-500 mt-2">Оновлено: {{ selectedPending.updatedAt | date:'medium' }}</p>
+        } @else {
+          @if (selectedPending.status === 'rejected') {
+            <div class="flex justify-end mt-6 space-x-2">
+              <button (click)="closePendingModal()"
+                      class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">
+                Закрити
+              </button>
+
+              <button (click)="deletePending(selectedPending.id)"
+                      class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                Видалити
+              </button>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Список схожих -->
+  @if (showDuplicates && similarLocations.length) {
+    <div class="mt-6">
+      <h3 class="text-lg font-semibold mb-2">Схожі локації поруч:</h3>
+
+      <ul class="divide-y divide-gray-200 border rounded-lg">
+        @for (loc of similarLocations; track loc.id) {
+          <li class="p-3 hover:bg-gray-50 flex justify-between items-center">
+            <div class="w-3/12">
+              <div class="font-medium text-gray-800">{{ loc.name }}</div>
+              <div class="text-sm text-gray-500">{{ loc.address }}</div>
+            </div>
+            <button class="text-blue-600 hover:underline"
+                    (click)="viewLocation(loc.id)">
+              Переглянути
+            </button>
+            @if (mode === 'admin' && location?.status !== 'published') {
+              <button class="text-red-600 hover:underline"
+                      (click)="openDuplicateModal(loc)">
+                Перенести дані
+              </button>
+            }
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+  @if (showRejectForm) {
+    <app-reject-dialog (cancel)="rejectionCancel()" (submit)="rejectionSubmit($event)"></app-reject-dialog>
+  }
+
+  @if (showComparisonForm) {
+    <app-comparison-dialog
+      [originalLocation]="modalLocation"
+      [pendingCopy]="selectedPending"
+      (canceled)="closeModal()"
+      (confirmed)="confirmChanges($event)"
+      (rejected)="submitPendingRejection($event)"></app-comparison-dialog>
+  }
+
+  @if (showDuplicateForm) {
+    <app-comparison-dialog
+      [duplicateMode]="true"
+      [originalLocation]="dublicateLocation"
+      [pendingCopy]="location"
+      (canceled)="closeDuplicateModal()"
+      (confirmed)="confirmDuplicateChanges($event)"></app-comparison-dialog>
+  }
+
+</div>

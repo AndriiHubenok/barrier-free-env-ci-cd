@@ -1,0 +1,2 @@
+docker build -t qgis316-server .
+docker run --rm -e QT_QPA_PLATFORM=offscreen -p 8102:8102 -v "D:/univer/5kurs/diplom/qgis_projects/docker/artem:/scripts" qgis316-server python3 /scripts/console_listener_without_user_logic.py

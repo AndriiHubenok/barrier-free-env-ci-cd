@@ -1,0 +1,152 @@
+version: "3.9"
+
+services:
+  # =========================
+  # BACKEND (Spring Boot)
+  # =========================
+  backend:
+    build:
+      context: ./Barrier-free-environment-diploma
+      dockerfile: Dockerfile
+    container_name: spring-backend
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./Barrier-free-environment-diploma/.env
+    depends_on:
+      - rabbitmq
+      - image-storage-service
+    networks:
+      - app-network
+
+  # =====================
+  # SPRING AI TEXT MODERATION
+  # =====================
+  geoportal-ai:
+    build:
+      context: ./spring-ai-text-moderation
+      dockerfile: Dockerfile
+    container_name: geoportal-ai
+    ports:
+      - "8082:8070"
+    env_file:
+      - ./spring-ai-text-moderation/.env
+    depends_on:
+      - rabbitmq
+    networks:
+      - app-network
+
+  # =========================
+  # FRONTEND (Angular)
+  # =========================
+  frontend:
+    build:
+      context: ./Barrier-free-environment-web
+      dockerfile: Dockerfile
+    container_name: angular-frontend
+    ports:
+      - "4200:4200"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+  # =========================
+  # IMAGE STORAGE SERVICE
+  # =========================
+  image-storage-service:
+    build:
+      context: ./image-storage-service
+      dockerfile: Dockerfile
+    container_name: image-storage-service
+    ports:
+      - "8081:8081"
+    env_file:
+      - ./image-storage-service/.env
+    depends_on:
+      - garage
+      - rabbitmq
+    networks:
+      - app-network
+
+  # =========================
+  # MINIO (GARAGE)
+  # =========================
+  garage:
+    image: minio/minio
+    container_name: garage
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: gto543geoDB
+      MINIO_ROOT_PASSWORD: ekFNkpGzh7ZM
+    volumes:
+      - garage_data:/data
+    networks:
+      - app-network
+
+  # =========================
+  # RABBITMQ
+  # =========================
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    env_file:
+      - ./image-storage-service/.env
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - app-network
+
+  # =====================
+  # NSFW Filter (Python)
+  # =====================
+  nsfw-server:
+    build:
+      context: ./py_nsfw-filter_online
+    container_name: nsfw-server
+    ports:
+      - "8001:8001"
+    volumes:
+      - hf_cache:/root/.cache/huggingface
+    networks:
+      - app-network
+
+  # =====================
+  # QGIS SERVER
+  # =====================
+  qgis-server:
+    build:
+      context: ./qgis_server
+      dockerfile: Dockerfile
+    container_name: qgis316-server
+    ports:
+      - "8102:8102"
+    env_file:
+      - ./qgis_server/.env
+    volumes:
+      - ./qgis_server:/scripts
+    command: python3 /scripts/console_listener_without_user_logic.py
+    networks:
+      - app-network
+
+
+# =========================
+# VOLUMES
+# =========================
+volumes:
+  garage_data:
+  rabbitmq_data:
+  hf_cache:
+
+# =========================
+# NETWORK
+# =========================
+networks:
+  app-network:
+    driver: bridge

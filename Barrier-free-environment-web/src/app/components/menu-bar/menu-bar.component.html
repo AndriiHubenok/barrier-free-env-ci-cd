@@ -1,0 +1,108 @@
+<nav class="bg-deep-dark-blue text-white shadow-md">
+  <div class="w-full px-4">
+    <div class="flex justify-between items-center h-14">
+
+      <div class="flex items-center space-x-2">
+        <img ngSrc="assets/logo.png" alt="Логотип порталу місто без барʼєрів" height="78" width="98" class="h-[35px] md:h-[50px] w-auto">
+        <span class="text-2xl font-bold">Місто без бар’єрів</span>
+      </div>
+
+      @if (showSearchBar && locations?.length) {
+        <div class="relative w-1/3">
+          <app-search-bar (search)="onSearch($event)"></app-search-bar>
+
+          <!-- Результати -->
+          @if (query && filtered.length > 0) {
+            <div
+              class="absolute top-full mt-1 w-full bg-white text-black
+               rounded-lg shadow-lg max-h-80 overflow-auto z-[999]"
+            >
+              @for (loc of filtered; track loc.id) {
+                <div
+                  class="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  (click)="selectLocation(loc)"
+                >
+                  <div class="font-semibold">{{ loc.name }}</div>
+                  <div class="text-sm text-gray-500">
+                    {{ loc.type.name }}
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- НІЧОГО НЕ ЗНАЙДЕНО -->
+          @if (query && filtered.length === 0) {
+            <div
+              class="absolute top-full mt-1 w-full bg-white text-gray-500
+               rounded-lg shadow-lg z-[999] px-4 py-3 text-sm"
+            >
+              Нічого не знайдено
+            </div>
+          }
+        </div>
+      }
+
+
+      <div class="hidden md:flex space-x-6 items-center">
+
+        @for (item of menuItems; track $index) {
+          @if (item.show()) {
+            <a [routerLink]="item.link"
+               class="hover:underline">
+              {{ item.label }}
+            </a>
+          }
+        }
+
+        @if (!isLogin) {
+          <button (click)="openLogin()" class="authorization-btn">
+            Увійти
+          </button>
+        } @else {
+          <a routerLink="/cabinet" class="hover:underline">
+            Мій кабінет
+          </a>
+          <button (click)="logout()" class="authorization-btn">
+            Вийти
+          </button>
+        }
+
+        <app-language-switcher
+          [current]="language"
+          (changeLanguage)="setLanguage($event)"
+          class="ml-4"
+        ></app-language-switcher>
+      </div>
+
+      <div class="md:hidden">
+        <button (click)="toggleMenu()" class="focus:outline-none focus:ring-2 focus:ring-white">
+          <svg xmlns="http://www.w3.org/2000/svg"
+               class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  @if (isOpen) {
+    <div class="md:hidden light-olive-green-background">
+      <a routerLink="/map" class="block px-4 py-2 hover:bg-deep-jungle-green hover:text-light-olive-green">Карта</a>
+      <a routerLink="/about" class="block px-4 py-2 hover:bg-deep-jungle-green hover:text-light-olive-green">Про
+        проєкт</a>
+      @if (isAdmin) {
+        <a routerLink="/admin" class="block px-4 py-2 hover:bg-deep-jungle-green hover:text-light-olive-green">Адмін-панель</a>
+      }
+      @if (!isLogin) {
+        <button (click)="openLogin()"
+                class="ml-4 px-4 py-1 rounded-lg bg-deep-jungle-green text-light-olive-green font-semibold hover:bg-light-olive-green hover:text-deep-jungle-green transition">
+          Увійти
+        </button>
+      }
+    </div>
+  }
+</nav>
