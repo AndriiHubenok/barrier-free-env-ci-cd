@@ -52,6 +52,23 @@ services:
       - app-network
 
   # =========================
+  # POSTGRESQL DATABASE
+  # =========================
+  db:
+    image: postgis/postgis:15-3.4
+    container_name: postgres-db
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: geodatabase
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: post_hack
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  # =========================
   # IMAGE STORAGE SERVICE
   # =========================
   image-storage-service:
@@ -143,6 +160,7 @@ volumes:
   garage_data:
   rabbitmq_data:
   hf_cache:
+  postgres_data:
 
 # =========================
 # NETWORK
