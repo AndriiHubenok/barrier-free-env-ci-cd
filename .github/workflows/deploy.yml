@@ -20,4 +20,4 @@ jobs:
           script: |
             cd /opt/barrier-free-backend
             git pull origin main
-            docker-compose up -d --build backend
+            docker compose up -d --build backend
